@@ -6,3 +6,17 @@ output: html_document
 ---
 
 ## Data Access and EDA
+
+We're obviously supposed to figure out whether `len` depends on `dose` and
+whether the dependency further depends on `supp`. Former is a real variable, latter
+is a categorical variable, so plot `len` against `dose` for each value of `supp`
+
+```{r data_access_and_EDA, cache = TRUE, warning = FALSE, message = FALSE }
+data( "ToothGrowth" )
+library( "ggplot2" )
+qplot( dose, len, data=ToothGrowth, colour = supp, size = 2 ) + geom_smooth( size = 1 )
+```
+
+Looks like a pretty clear increasing relationship, with `len` for `supp` == OJ > `len`
+for `supp` == VC at the lower end, converging at the higher end, also some
+saturation setting in for `dose` > 1.0 for `supp` == OJ
