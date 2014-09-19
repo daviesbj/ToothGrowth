@@ -20,3 +20,11 @@ qplot( dose, len, data=ToothGrowth, colour = supp, size = 2 ) + geom_smooth( siz
 Looks like a pretty clear increasing relationship, with `len` for `supp` == OJ > `len`
 for `supp` == VC at the lower end, converging at the higher end, also some
 saturation setting in for `dose` > 1.0 for `supp` == OJ
+
+## Summarizing the dataset
+
+```{r ToothGrowth_dataset_summary, cache = TRUE }
+table(ToothGrowth$supp,ToothGrowth$dose)
+```
+
+Data points are evenly distributed by supplement-type and dose
