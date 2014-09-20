@@ -2,7 +2,7 @@
 title: "Tooth Growth EDA & Inference — Project Log"
 author: "Brian Davies"
 date: "19 September 2014"
-output: html_document
+output: pdf_document
 ---
 
 ## Data Access and EDA
@@ -27,4 +27,25 @@ saturation setting in for `dose` > 1.0 for `supp` == OJ
 table(ToothGrowth$supp,ToothGrowth$dose)
 ```
 
-Data points are evenly distributed by supplement-type and dose
+We have a total of 60 data points, evenly distributed between the two supplements
+{VC, OJ} (_Vitamin C_ and _Orange Juice_, I'm guessing) and three dose levels,
+{0.5, 1.0 and 2.0} -- no control tests at dose rate of zero, no tests at 1.5. This
+gives 6 combinations of `supp` and `dose` with ten tests for each combination. In
+this case the measurements can't be interpreted as paired, so each set of ten
+tests is a separate sample.
+
+## Comparing the two supplements at each dose level
+
+At each dose level, do a _two-sided_ test with the null hypothesis that
+the two supplements have the same effect (three tests in all)
+
+```{r compare_OJ_and_VC_at_each_dose, cache = TRUE}
+for( dose in c(0.5,1.0,2.0)){
+  message( '## Comparing OJ and VC for dose = ', dose )
+  thisT <- t.test( ToothGrowth[((ToothGrowth$supp=='OJ')&(ToothGrowth$dose==dose)),'len'],
+    ToothGrowth[((ToothGrowth$supp=='VC')&(ToothGrowth$dose==dose)),'len'])
+  message( sprintf( "## Results: p-value = %.5f, null-hypothesis CI = (%.2f, %.2f)",
+    thisT$p.value, thisT$conf.int[1], thisT$conf.int[2] ) ) }
+```
+
+## Comparing different dose levels for each supplement
