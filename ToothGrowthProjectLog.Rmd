@@ -5,47 +5,63 @@ date: "19 September 2014"
 output: pdf_document
 ---
 
-## Data Access and EDA
+## Data Access, dataset summary, EDA
 
-We're obviously supposed to figure out whether `len` depends on `dose` and
-whether the dependency further depends on `supp`. Former is a real variable, latter
-is a categorical variable, so plot `len` against `dose` for each value of `supp`
-
-```{r data_access_and_EDA, cache = TRUE, warning = FALSE, message = FALSE }
+```{r data_access_and_summary, cache = TRUE }
 data( "ToothGrowth" )
-library( "ggplot2" )
-qplot( dose, len, data=ToothGrowth, colour = supp, size = 2 ) + geom_smooth( size = 1 )
-```
-
-Looks like a pretty clear increasing relationship, with `len` for `supp` == OJ > `len`
-for `supp` == VC at the lower end, converging at the higher end, also some
-saturation setting in for `dose` > 1.0 for `supp` == OJ
-
-## Summarizing the dataset
-
-```{r ToothGrowth_dataset_summary, cache = TRUE }
+head(ToothGrowth,n=3)
 table(ToothGrowth$supp,ToothGrowth$dose)
 ```
-
-We have a total of 60 data points, evenly distributed between the two supplements
-{VC, OJ} (_Vitamin C_ and _Orange Juice_, I'm guessing) and three dose levels,
-{0.5, 1.0 and 2.0} -- no control tests at dose rate of zero, no tests at 1.5. This
-gives 6 combinations of `supp` and `dose` with ten tests for each combination. In
-this case the measurements can't be interpreted as paired, so each set of ten
+60 data points, evenly distributed between two `supp`lements
+{VC, OJ} (_Vitamin C_ and _Orange Juice_) and three `dose` levels,
+{0.5, 1.0 and 2.0} -- no controls at `dose` = 0. So
+6 combinations of `supp` and `dose` with 10 tests for each. No
+natural pairing, so each set of ten
 tests is a separate sample.
 
-## Comparing the two supplements at each dose level
+```{r EDA_pic, cache = TRUE, warning = FALSE, message = FALSE, fig.height = 2 }
+library( "ggplot2" )
+qplot( dose, len, data=ToothGrowth, colour = supp ) + geom_smooth()
+```
 
-At each dose level, do a _two-sided_ test with the null hypothesis that
-the two supplements have the same effect (three tests in all)
+Looks like a pretty clear increasing relationship, with `len` for `supp == 'OJ'` > `len`
+for `supp == 'VC'` at the lower end, converging at the higher end, also some
+saturation setting in for `dose > 1.0` for `supp == OJ`
+
+## Hypotheses to be tested
+
+We want to do multiple tests & apply a multi-comparison
+correction, so it makes sense to marshall all our null
+hypotheses in one place. They are the negations of the "gut feel"
+for "how these things out to work", namely:
+
+(1) Higher `dose` is associated with
+higher levels of `len`. Four 1-sided T tests.
+(2) At each `dose` level, changing the `supp` changes the
+level of `len`. Three two-sided T tests.
+
+## T-test comparison
+
+### Compare adjacent dose levels for each supplement (four one-sided tests)
+
+```{r compare_adjacent_dose_levels, cache = TRUE}
+for( supp in c( 'OJ', 'VC' ) ){
+  for ( dPair in list( c(0.5, 1.0), c(1.0, 2.0 ) ) ){
+    thisT <- t.test( ToothGrowth[((ToothGrowth$supp==supp)&(ToothGrowth$dose==dPair[1])),'len'],
+    ToothGrowth[((ToothGrowth$supp==supp)&(ToothGrowth$dose==dPair[2])),'len'],
+    alternative = 'l' )
+    message( sprintf( "## Results: supp = %2s, dose = %.1f & %.1f, p-value = %.5f, null-hypothesis CI = (%.2f, %.2f)",
+    supp, dPair[1], dPair[2], thisT$p.value, thisT$conf.int[1], thisT$conf.int[2] ) )
+  }
+}
+```
+
+### Compare supplements at each dose level (three two-sided tests)
 
 ```{r compare_OJ_and_VC_at_each_dose, cache = TRUE}
 for( dose in c(0.5,1.0,2.0)){
-  message( '## Comparing OJ and VC for dose = ', dose )
   thisT <- t.test( ToothGrowth[((ToothGrowth$supp=='OJ')&(ToothGrowth$dose==dose)),'len'],
     ToothGrowth[((ToothGrowth$supp=='VC')&(ToothGrowth$dose==dose)),'len'])
-  message( sprintf( "## Results: p-value = %.5f, null-hypothesis CI = (%.2f, %.2f)",
-    thisT$p.value, thisT$conf.int[1], thisT$conf.int[2] ) ) }
+  message( sprintf( "## Results: dose = %.1f, p-value = %.5f, null-hypothesis CI = (%.2f, %.2f)",
+    dose, thisT$p.value, thisT$conf.int[1], thisT$conf.int[2] ) ) }
 ```
-
-## Comparing different dose levels for each supplement
